@@ -1,0 +1,7 @@
+{
+    "sales_order_address": {
+        "column": {
+            "nshift_pickup_point": true
+        }
+    }
+}
