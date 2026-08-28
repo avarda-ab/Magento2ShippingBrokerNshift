@@ -1,5 +1,6 @@
 {
     "name": "avarda/shipping-broker-nshift",
+    "version": "1.0.0",
     "description": "nShift/Unifaun provider for the Avarda shipping broker.",
     "type": "magento2-module",
     "license": [
