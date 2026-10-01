@@ -26,8 +26,8 @@ class GetShippingRateStatusParser implements ParserInterface
                 return false;
             }
             foreach ($response['Modules'] as $module) {
-                $selectedShippingOption = $module['SelectedShippingOption'];
-                if (!$selectedShippingOption) {
+                $selectedShippingOption = $module['SelectedShippingOption'] ?? null;
+                if (!$selectedShippingOption || !is_array($selectedShippingOption)) {
                     return $this->getLowestValueShippingData($module);
                 } else {
                     return $this->getSelectedShippingData($selectedShippingOption, $module);
@@ -40,16 +40,17 @@ class GetShippingRateStatusParser implements ParserInterface
 
     private function getSelectedShippingData(array $selectedShippingOption, array $module): array | bool
     {
-        $selectedOptionName = $selectedShippingOption['SelectedOptionName'];
-        $selectedAgentId = $selectedShippingOption['SelectedAgentId'];
-        $price = $selectedShippingOption['Price'];
-        $optionIds = $selectedShippingOption['OptionIds'];
-        $optionId = $optionIds[0];
+        $optionId = $selectedShippingOption['OptionIds'][0] ?? null;
+        if ($optionId === null) {
+            return false;
+        }
+        $selectedOptionName = $selectedShippingOption['SelectedOptionName'] ?? null;
+        $selectedAgentId = $selectedShippingOption['SelectedAgentId'] ?? null;
+        $price = $selectedShippingOption['Price'] ?? null;
 
-        $widgetDataJson = $module['WidgetDataJson'];
         $widgetOption = [];
-        foreach ($widgetDataJson['options'] ?? [] as $option) {
-            if ($optionId == $option['id']) {
+        foreach ($module['WidgetDataJson']['options'] ?? [] as $option) {
+            if ($optionId == ($option['id'] ?? null)) {
                 $widgetOption = $option;
                 break;
             }
@@ -57,14 +58,9 @@ class GetShippingRateStatusParser implements ParserInterface
         if (!$widgetOption) {
             return false;
         }
-        $carrierId = $widgetOption['carrierId'];
-        $priceValue = $widgetOption['priceValue'];
-        $defaultPrice = $widgetOption['defaultPrice'];
-        $taxRate = $widgetOption['taxRate'];
-        $serviceId = $widgetOption['serviceId'];
 
         $widgetAgent = [];
-        foreach ($widgetOption['agents'] as $agent) {
+        foreach ($widgetOption['agents'] ?? [] as $agent) {
             if (isset($agent['id']) && $selectedAgentId == $agent['id']) {
                 $widgetAgent = $agent;
                 break;
@@ -76,45 +72,44 @@ class GetShippingRateStatusParser implements ParserInterface
             'selectedAgentId' => $selectedAgentId,
             'price' => $price,
             'optionId' => $optionId,
-            'carrierId' => $carrierId,
-            'priceValue' => $priceValue,
-            'defaultPrice' => $defaultPrice,
-            'taxRate' => $taxRate,
-            'serviceId' => $serviceId,
+            'carrierId' => $widgetOption['carrierId'] ?? null,
+            'priceValue' => $widgetOption['priceValue'] ?? $price,
+            'defaultPrice' => $widgetOption['defaultPrice'] ?? null,
+            'taxRate' => $widgetOption['taxRate'] ?? null,
+            'serviceId' => $widgetOption['serviceId'] ?? null,
             'widgetAgent' => $widgetAgent,
         ];
     }
 
     private function getLowestValueShippingData(array $module): array | bool
     {
-        $widgetDataJson = $module['WidgetDataJson'];
         $widgetOption = [];
         $minPrice = null;
-        foreach ($widgetDataJson['options'] ?? [] as $option) {
-            if (null === $minPrice || $minPrice > $option['priceValue']) {
+        foreach ($module['WidgetDataJson']['options'] ?? [] as $option) {
+            // nShift omits priceValue for options that no price rule matches; such an option is not free.
+            if (!isset($option['priceValue']) || !is_numeric($option['priceValue'])) {
+                continue;
+            }
+            if (null === $minPrice || $minPrice > (float) $option['priceValue']) {
                 $widgetOption = $option;
-                $minPrice = $option['priceValue'];
+                $minPrice = (float) $option['priceValue'];
             }
         }
         if (!$widgetOption) {
             return false;
         }
-        $carrierId = $widgetOption['carrierId'];
         $priceValue = $widgetOption['priceValue'];
-        $defaultPrice = $widgetOption['defaultPrice'];
-        $taxRate = $widgetOption['taxRate'];
-        $serviceId = $widgetOption['serviceId'];
 
         return [
             'selectedOptionName' => null,
             'selectedAgentId' => null,
             'price' => $priceValue,
-            'optionId' => $widgetOption['id'],
-            'carrierId' => $carrierId,
+            'optionId' => $widgetOption['id'] ?? null,
+            'carrierId' => $widgetOption['carrierId'] ?? null,
             'priceValue' => $priceValue,
-            'defaultPrice' => $defaultPrice,
-            'taxRate' => $taxRate,
-            'serviceId' => $serviceId,
+            'defaultPrice' => $widgetOption['defaultPrice'] ?? null,
+            'taxRate' => $widgetOption['taxRate'] ?? null,
+            'serviceId' => $widgetOption['serviceId'] ?? null,
             'widgetAgent' => null,
         ];
     }
