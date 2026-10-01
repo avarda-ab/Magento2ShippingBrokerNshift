@@ -11,30 +11,47 @@
             <values>
                 <value id="unifaun-api" type="host">api.unifaun.com</value>
                 <value id="unifaun-subdomains" type="host">*.unifaun.com</value>
+                <value id="nshiftportal" type="host">nshiftportal.com</value>
+                <value id="nshiftportal-subdomains" type="host">*.nshiftportal.com</value>
             </values>
         </policy>
         <policy id="connect-src">
             <values>
                 <value id="unifaun-api" type="host">api.unifaun.com</value>
                 <value id="unifaun-subdomains" type="host">*.unifaun.com</value>
+                <value id="nshiftportal" type="host">nshiftportal.com</value>
+                <value id="nshiftportal-subdomains" type="host">*.nshiftportal.com</value>
             </values>
         </policy>
         <policy id="img-src">
             <values>
                 <value id="unifaun-api" type="host">api.unifaun.com</value>
                 <value id="unifaun-subdomains" type="host">*.unifaun.com</value>
+                <value id="nshiftportal" type="host">nshiftportal.com</value>
+                <value id="nshiftportal-subdomains" type="host">*.nshiftportal.com</value>
+                <value id="openstreetmap-tiles" type="host">tile.openstreetmap.org</value>
             </values>
         </policy>
         <policy id="frame-src">
             <values>
                 <value id="unifaun-api" type="host">api.unifaun.com</value>
                 <value id="unifaun-subdomains" type="host">*.unifaun.com</value>
+                <value id="nshiftportal" type="host">nshiftportal.com</value>
+                <value id="nshiftportal-subdomains" type="host">*.nshiftportal.com</value>
             </values>
         </policy>
         <policy id="style-src">
             <values>
                 <value id="unifaun-api" type="host">api.unifaun.com</value>
                 <value id="unifaun-subdomains" type="host">*.unifaun.com</value>
+                <value id="nshiftportal" type="host">nshiftportal.com</value>
+                <value id="nshiftportal-subdomains" type="host">*.nshiftportal.com</value>
+            </values>
+        </policy>
+        <policy id="font-src">
+            <values>
+                <value id="nshiftportal" type="host">nshiftportal.com</value>
+                <value id="nshiftportal-subdomains" type="host">*.nshiftportal.com</value>
             </values>
         </policy>
     </policies>

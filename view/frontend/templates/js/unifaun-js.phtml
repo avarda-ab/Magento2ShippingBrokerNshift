@@ -14,7 +14,9 @@ echo $secureRenderer->renderTag('script', [], '
 var unifaunObserver = new MutationObserver(function(mutations) {
     mutations.forEach(function(mutation) {
         mutation.addedNodes.forEach(function(node) {
-            if (node.tagName === "SCRIPT" && node.src && node.src.indexOf("api.unifaun.com") !== -1) {
+            if (node.tagName === "SCRIPT" && node.src
+                && (node.src.indexOf("api.unifaun.com") !== -1 || node.src.indexOf("nshiftportal.com") !== -1)
+            ) {
                 var _define = define;
                 var unifaunScript = node;
 
@@ -49,3 +51,4 @@ unifaunObserver.observe(document, { childList: true, subtree: true });
 ', false);
 ?>
 <script src="https://api.unifaun.com/rs-extapi/v1/delivery-checkouts-widget/unifaun-checkout-all.min.js"></script>
+<script src="https://www.nshiftportal.com/checkout/widget/nshift-checkout-widget.js"></script>

@@ -13,6 +13,8 @@ use Avarda\ShippingBroker\Api\Gateway\Response\ParserInterface;
 
 /**
  * Parse Gateway response regarding shipping rates
+ *
+ * Supports both the legacy Unifaun widget data and the nShift Delivery Checkout widget data.
  */
 class GetShippingRateStatusParser implements ParserInterface
 {
@@ -27,7 +29,7 @@ class GetShippingRateStatusParser implements ParserInterface
             }
             foreach ($response['Modules'] as $module) {
                 $selectedShippingOption = $module['SelectedShippingOption'] ?? null;
-                if (!$selectedShippingOption || !is_array($selectedShippingOption)) {
+                if (!$selectedShippingOption) {
                     return $this->getLowestValueShippingData($module);
                 } else {
                     return $this->getSelectedShippingData($selectedShippingOption, $module);
@@ -40,17 +42,14 @@ class GetShippingRateStatusParser implements ParserInterface
 
     private function getSelectedShippingData(array $selectedShippingOption, array $module): array | bool
     {
-        $optionId = $selectedShippingOption['OptionIds'][0] ?? null;
+        $optionId = $selectedShippingOption['OptionId'] ?? $selectedShippingOption['OptionIds'][0] ?? null;
         if ($optionId === null) {
             return false;
         }
-        $selectedOptionName = $selectedShippingOption['SelectedOptionName'] ?? null;
-        $selectedAgentId = $selectedShippingOption['SelectedAgentId'] ?? null;
-        $price = $selectedShippingOption['Price'] ?? null;
 
         $widgetOption = [];
         foreach ($module['WidgetDataJson']['options'] ?? [] as $option) {
-            if ($optionId == ($option['id'] ?? null)) {
+            if ($optionId == $this->getOptionId($option)) {
                 $widgetOption = $option;
                 break;
             }
@@ -59,26 +58,22 @@ class GetShippingRateStatusParser implements ParserInterface
             return false;
         }
 
-        $widgetAgent = [];
-        foreach ($widgetOption['agents'] ?? [] as $agent) {
-            if (isset($agent['id']) && $selectedAgentId == $agent['id']) {
-                $widgetAgent = $agent;
-                break;
-            }
-        }
+        $selectedAgentId = $selectedShippingOption['PickupPointId']
+            ?? $selectedShippingOption['SelectedAgentId']
+            ?? null;
+        $selectedAgentId = $selectedAgentId === null ? null : (string) $selectedAgentId;
+        $selectedOptionName = $selectedShippingOption['OptionName']
+            ?? $selectedShippingOption['SelectedOptionName']
+            ?? null;
+        $price = $selectedShippingOption['Price'] ?? null;
 
-        return [
-            'selectedOptionName' => $selectedOptionName,
-            'selectedAgentId' => $selectedAgentId,
-            'price' => $price,
-            'optionId' => $optionId,
-            'carrierId' => $widgetOption['carrierId'] ?? null,
-            'priceValue' => $widgetOption['priceValue'] ?? $price,
-            'defaultPrice' => $widgetOption['defaultPrice'] ?? null,
-            'taxRate' => $widgetOption['taxRate'] ?? null,
-            'serviceId' => $widgetOption['serviceId'] ?? null,
-            'widgetAgent' => $widgetAgent,
-        ];
+        return $this->buildShippingData(
+            $widgetOption,
+            $selectedOptionName === null ? null : (string) $selectedOptionName,
+            $selectedAgentId,
+            $price ?? $this->getOptionPrice($widgetOption),
+            $this->getWidgetAgent($widgetOption, $selectedAgentId),
+        );
     }
 
     private function getLowestValueShippingData(array $module): array | bool
@@ -86,31 +81,87 @@ class GetShippingRateStatusParser implements ParserInterface
         $widgetOption = [];
         $minPrice = null;
         foreach ($module['WidgetDataJson']['options'] ?? [] as $option) {
-            // nShift omits priceValue for options that no price rule matches; such an option is not free.
-            if (!isset($option['priceValue']) || !is_numeric($option['priceValue'])) {
+            $optionPrice = $this->getOptionPrice($option);
+            // Options without a price have no matching price rule; picking one would mean free shipping
+            if ($optionPrice === null || ($option['valid'] ?? true) === false) {
                 continue;
             }
-            if (null === $minPrice || $minPrice > (float) $option['priceValue']) {
+            if (null === $minPrice || $minPrice > $optionPrice) {
                 $widgetOption = $option;
-                $minPrice = (float) $option['priceValue'];
+                $minPrice = $optionPrice;
             }
         }
         if (!$widgetOption) {
             return false;
         }
-        $priceValue = $widgetOption['priceValue'];
 
+        return $this->buildShippingData($widgetOption, null, null, $minPrice, null);
+    }
+
+    private function buildShippingData(
+        array $widgetOption,
+        ?string $selectedOptionName,
+        ?string $selectedAgentId,
+        int | float | string | null $price,
+        ?array $widgetAgent,
+    ): array {
         return [
-            'selectedOptionName' => null,
-            'selectedAgentId' => null,
-            'price' => $priceValue,
-            'optionId' => $widgetOption['id'] ?? null,
+            'selectedOptionName' => $selectedOptionName,
+            'selectedAgentId' => $selectedAgentId,
+            'price' => $price,
+            'optionId' => $this->getOptionId($widgetOption),
             'carrierId' => $widgetOption['carrierId'] ?? null,
-            'priceValue' => $priceValue,
-            'defaultPrice' => $widgetOption['defaultPrice'] ?? null,
+            'priceValue' => $this->getOptionPrice($widgetOption) ?? $price,
+            'defaultPrice' => $widgetOption['defaultPrice'] ?? $widgetOption['originalPrice'] ?? null,
             'taxRate' => $widgetOption['taxRate'] ?? null,
-            'serviceId' => $widgetOption['serviceId'] ?? null,
-            'widgetAgent' => null,
+            'serviceId' => $widgetOption['serviceId'] ?? $widgetOption['carrierProductId'] ?? null,
+            'widgetAgent' => $widgetAgent,
         ];
+    }
+
+    private function getOptionId(array $option): ?string
+    {
+        $optionId = $option['id'] ?? $option['optionId'] ?? null;
+
+        return $optionId === null ? null : (string) $optionId;
+    }
+
+    private function getOptionPrice(array $option): int | float | null
+    {
+        $price = $option['priceValue'] ?? $option['price'] ?? null;
+
+        return is_numeric($price) ? $price + 0 : null;
+    }
+
+    private function getWidgetAgent(array $widgetOption, ?string $selectedAgentId): array
+    {
+        if ($selectedAgentId === null) {
+            return [];
+        }
+
+        foreach ($widgetOption['agents'] ?? [] as $agent) {
+            if (isset($agent['id']) && $selectedAgentId == $agent['id']) {
+                return $agent;
+            }
+        }
+
+        // The nShift widget names pickup point fields differently; map them to the keys ShippingDetails reads
+        foreach ($widgetOption['pickupPoints'] ?? [] as $pickupPoint) {
+            if (isset($pickupPoint['pickupPointId']) && $selectedAgentId == $pickupPoint['pickupPointId']) {
+                return [
+                    'id' => $pickupPoint['pickupPointId'],
+                    'name' => $pickupPoint['name'] ?? null,
+                    'address1' => $pickupPoint['address1'] ?? null,
+                    'address2' => $pickupPoint['address2'] ?? null,
+                    'zipCode' => $pickupPoint['postalCode'] ?? null,
+                    'city' => $pickupPoint['city'] ?? null,
+                    'countryCode' => $pickupPoint['countryCode'] ?? null,
+                    'mapLatitude' => $pickupPoint['latitude'] ?? null,
+                    'mapLongitude' => $pickupPoint['longitude'] ?? null,
+                ];
+            }
+        }
+
+        return [];
     }
 }

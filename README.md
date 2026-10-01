@@ -49,9 +49,10 @@ extension attribute.
 
 ## Notes and limitations
 
-- The nShift widget script is loaded from `api.unifaun.com` on the Avarda
-  checkout pages; the hosts it needs are whitelisted for CSP. A compatibility
-  shim keeps RequireJS from claiming the script as an AMD module.
+- Support for the nShift Delivery Checkout widget (nshiftportal.com) alongside
+  the legacy Unifaun widget. Both widget scripts are loaded on the Avarda
+  checkout pages; the hosts they need are whitelisted for CSP. A compatibility
+  shim keeps RequireJS from claiming the scripts as AMD modules.
 - Weight uses the default store's weight unit for the whole cart; per-store
   weight units are not resolved separately.
 - The pickup point is stored only on the order, and only for orders whose quote
