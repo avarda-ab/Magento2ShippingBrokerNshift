@@ -39,12 +39,17 @@ class WeightBuilder implements CustomAttributeBuilderInterface
 
     private function getValue(CartInterface $cart): string
     {
+        return (string) $this->getTotalWeightInGrams($cart);
+    }
+
+    public function getTotalWeightInGrams(CartInterface $cart): int
+    {
         $weight = 0;
         foreach ($this->getItems($cart) as $item) {
             $weight += $this->getWeightInGrams((float) $item->getWeight() * $item->getQty());
         }
 
-        return (string) $weight;
+        return $weight;
     }
 
     /**
