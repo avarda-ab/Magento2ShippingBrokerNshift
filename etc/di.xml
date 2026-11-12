@@ -21,7 +21,7 @@
                 <item name="discount" xsi:type="object">Avarda\ShippingBrokerNshift\Gateway\Request\CustomAttribute\Nshift\DiscountBuilder</item>
                 <item name="weight" xsi:type="object">Avarda\ShippingBrokerNshift\Gateway\Request\CustomAttribute\Nshift\WeightBuilder</item>
                 <item name="weight_kg" xsi:type="object">Avarda\ShippingBrokerNshift\Gateway\Request\CustomAttribute\Nshift\WeightKgBuilder</item>
-                <item name="cartprice" xsi:type="object">Avarda\ShippingBrokerNshift\Gateway\Request\CustomAttribute\Nshift\CartPriceBuilder</item>
+                <item name="cart_price" xsi:type="object">Avarda\ShippingBrokerNshift\Gateway\Request\CustomAttribute\Nshift\CartPriceBuilder</item>
             </argument>
         </arguments>
     </type>

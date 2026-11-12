@@ -32,7 +32,7 @@ so carrier rules in the portal can react to it:
 | `discount` | Placeholder, always `1` — cart discounts are not passed on yet |
 | `weight` | Total cart weight in grams, converted from the store's weight unit (kg or lbs) |
 | `weight_kg` | Total cart weight in kilograms (e.g. `5` or `5.25`) |
-| `cartprice` | Product total including tax and discounts, without shipping (e.g. `8747.00`) |
+| `cart_price` | Product total including tax and discounts, without shipping (e.g. `8747.00`) |
 
 ## Selected option
 

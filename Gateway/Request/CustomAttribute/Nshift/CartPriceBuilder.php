@@ -14,7 +14,7 @@ use Magento\Quote\Api\Data\CartInterface;
 
 class CartPriceBuilder implements CustomAttributeBuilderInterface
 {
-    public const ATTRIBUTE = 'cartprice';
+    public const ATTRIBUTE = 'cart_price';
 
     /**
      * @inheritdoc
@@ -28,7 +28,7 @@ class CartPriceBuilder implements CustomAttributeBuilderInterface
      * Product total including tax and discounts; shipping is left out so price-based
      * rules do not depend on the shipping option being chosen.
      */
-    private function getValue(CartInterface $cart): string
+    public function getValue(CartInterface $cart): string
     {
         $cart->collectTotals();
         $address = $cart->getShippingAddress();
